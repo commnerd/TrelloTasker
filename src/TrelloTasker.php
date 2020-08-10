@@ -4,6 +4,7 @@
  */
 namespace TrelloTasker;
 
+use TrelloTasker\Config;
 use Tasker\Group;
 use Iterator;
 
@@ -20,6 +21,10 @@ class Tasker implements Iterator
      * Iterator index for Iterator implementation
      */
     private int $iteratorIndex = 0;
+
+    public function __constructor(Config $config) {
+
+    }
 
     /**
      * Get current task to support Iterator interface

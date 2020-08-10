@@ -1,15 +1,16 @@
 <?php
-
+/**
+ * @author Michael J. Miller <commnerd@gmail.com>
+ */
 namespace TrelloTasker\Api;
 
-class BoardsEndpoint {
-    private string $path = "https://api.trello.com/1/members/me/boards";
-    private array $query;
+use TrelloTasker\Api\Endpoint;
 
-    public function __constructor(string $key, string $token) {
-        $this->query = [
-            "key" => $key,
-            "token" => $token,
-        ];
-    }
+/**
+ * Endpoint to retrieve the available Trello boards
+ */
+class BoardsEndpoint extends Endpoint {
+    const PATH = "https://api.trello.com/1/members/me/boards";
+
+    const VERBS = ["GET"];
 }
