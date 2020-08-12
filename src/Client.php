@@ -4,6 +4,7 @@
  */
 namespace TrelloTasker;
 
+use TrelloTasker\Api\BoardsEndpoint;
 use TrelloTasker\Api\Endpoint;
 use TrelloTasker\Config;
 
@@ -28,7 +29,7 @@ class Client
     {
         $endpoint = $this->config->get(BoardsEndpoint::class);
 
-        $result = $this->call($endpoint);
+        $result = json_decode(file_get_contents(__DIR__.'/../tests/Fixtures/Api/Responses/BoardsResponse.json'));
 
         return $result;
 

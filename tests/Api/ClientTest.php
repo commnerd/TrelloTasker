@@ -4,11 +4,10 @@
  */
 namespace Tests\Api;
 
-use TrelloTasker\Api\Exceptions\EndpointNeedsPathException;
-use Tests\Fixtures\Api\PathlessEndpoint;
 use TrelloTasker\Api\BoardsEndpoint;
+use TrelloTasker\Api\CurlClient;
 use TrelloTasker\Api\Endpoint;
-use TrelloTasker\Api\Client;
+use TrelloTasker\Client;
 use TrelloTasker\Config;
 use Tests\TestCase;
 
@@ -18,6 +17,9 @@ class ClientTest extends TestCase
 
     public function setUp(): void
     {
+
+        // Calling $stub->doSomething() will now return
+        // 'foo'.
         $this->client = new Client(new Config());
 
         parent::setUp();
