@@ -4,12 +4,35 @@
  */
 namespace TrelloTasker;
 
+use GuzzleHttp\Client;
+
+use TrelloTasker\Api\BoardsEndpoint;
+use TrelloTasker\Models\Board;
 use TrelloTasker\Config;
 use Tasker\Group;
 use Iterator;
 
-class Tasker implements Iterator
+class TrelloTasker implements Iterator
 {
+    /**
+     * Endpoints to be used in this client
+     */
+    const ENDPOINTS = [
+        BoardsEndpoint::class,
+    ];
+
+    /**
+     * Config for the app
+     *
+     * @var $config
+     */
+    private Config $config;
+
+    /**
+     * Guzzle client
+     */
+    private Client $client;
+
     /**
      * Grouping of boards
      *
@@ -22,8 +45,17 @@ class Tasker implements Iterator
      */
     private int $iteratorIndex = 0;
 
-    public function __constructor(Config $config) {
-
+    public function __construct(
+        Config $config,
+        Client $client = null
+    )
+    {
+        $this->config = $config;
+        if(is_null($client)) {
+            $client = new Client();
+        }
+        $this->client = $client;
+        $this->initializeEndpoints();
     }
 
     /**
@@ -31,7 +63,7 @@ class Tasker implements Iterator
      *
      * @return Group
      */
-    public function current() : Group {
+    public function current(): Group {
         $this->groups[$this->iteratorIndex];
     }
 
@@ -40,7 +72,7 @@ class Tasker implements Iterator
      *
      * @return int
      */
-    public function key() : int {
+    public function key(): int {
         return $this->iteratorIndex;
     }
 
@@ -49,7 +81,7 @@ class Tasker implements Iterator
      *
      * @return void
      */
-    public function next () : void
+    public function next(): void
     {
         $this->iteratorIndex++;
     }
@@ -59,7 +91,7 @@ class Tasker implements Iterator
      *
      * @return void
      */
-    public function rewind () : void
+    public function rewind(): void
     {
         $this->iteratorIndex--;
     }
@@ -69,8 +101,46 @@ class Tasker implements Iterator
      *
      * @return boolean
      */
-    public function valid() : bool
+    public function valid(): bool
     {
         return !!$this->boards[$this->iteratorIndex];
+    }
+
+    /**
+     * Get Trello boards
+     *
+     * @return array
+     */
+    public function getBoards(): array
+    {
+        $endpoint = $this->config->get(BoardsEndpoint::class);
+        $boards = [];
+
+        $response = $this->client->get($endpoint::PATH);
+
+        $structure = json_decode($response->getBody());
+
+        foreach($structure as $listing) {
+            $boards[] = new Board(
+                $listing->name,
+                $listing->desc,
+                [],
+                (array)$listing->labelNames,
+            );
+        }
+
+        return $boards;
+    }
+
+    /**
+     * Load endpoints into the config
+     *
+     * @return void
+     */
+    private function initializeEndpoints()
+    {
+        foreach(self::ENDPOINTS as $class) {
+            $this->config->set($class, new $class);
+        }
     }
 }
