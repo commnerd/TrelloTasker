@@ -11,27 +11,24 @@ use Tasker\Traits\Titled;
 use Tasker\Traits\Tagged;
 use Tasker\Traits\Dated;
 
-use TrelloTasker\Exceptions\NotATaskGroupException;
 use Tasker\Group;
 use Tasker\Task;
 use DateTime;
 
 /**
- * Trello Board model
+ * Trello List model
  */
-class Board extends Group
+class CardList extends Group
 {
-    const NO_TASK_MESSAGE = "Boards do not directly contain tasks.";
-
     use Titled, Described, Tagged, Dated, Tombstoned, Grouped;
 
-    private array $cardLists = [];
-    private int $cardListIndex = -1;
+    private array $cards = [];
+    private int $cardIndex = -1;
 
     public function __construct(
-        string $title,
+        string $title = '',
         string $description = '',
-        array $cardLists = [],
+        array $cards = [],
         array $tags = [],
         DateTime $created_at = new DateTime("now"),
         DateTime $updated_at = new DateTime("now"),
@@ -40,8 +37,8 @@ class Board extends Group
     {
         $this->setTitle($title);
         $this->setDescription($description);
-        foreach($cardLists as $cardList) {
-            $this->cardLists[] = $cardList;
+        foreach($cards as $card) {
+            $this->cards[] = $card;
         }
         foreach($tags as $color => $name) {
             $this->addTag(new Tag(
@@ -60,47 +57,43 @@ class Board extends Group
      * @return CardList
      */
     public function current(): CardList {
-        return $this->cardLists[$this->cardListIndex];
+        return $this->cards[$this->cardIndex];
     }
 
     /**
      * Implementation of key for Iterator interface
      *
-     * @return int
+     * @return integer
      */
     public function key(): int
     {
-        return $this->cardListIndex;
+        return $this->cardIndex;
     }
 
     /**
      * Implementation of next for Iterator interface
-     *
-     * @return void
      */
-    public function next(): void
+    public function next()
     {
-        $this->cardListIndex++;
+        $this->cardIndex++;
     }
 
     /**
      * Implementation of rewind for Iterator interface
-     *
-     * @return void
      */
-    public function rewind(): void
+    public function rewind()
     {
-        $this->cardListIndex--;
+        $this->cardIndex--;
     }
 
     /**
      * Implementation of valid for Iterator interface
      *
-     * @return bool
+     * @return boolean
      */
     public function valid(): bool
     {
-        return !empty($this->cardLists[$this->cardListIndex]);
+        return !empty($this->cards[$this->cardIndex]);
     }
 
     /**
@@ -110,7 +103,7 @@ class Board extends Group
      */
     public function getTasks(): array
     {
-        throw new NotATaskGroupException(self::NO_TASK_MESSAGE);
+        return $this->cards;
     }
 
     /**
@@ -121,7 +114,8 @@ class Board extends Group
      */
     public function addTask(Task $task): bool
     {
-        throw new NotATaskGroupException(self::NO_TASK_MESSAGE);
+        $this->cards[] = $task;
+        return true;
     }
 
     /**
@@ -132,6 +126,12 @@ class Board extends Group
      */
     public function removeTask(Task $task): bool
     {
-        throw new NotATaskGroupException(self::NO_TASK_MESSAGE);
+        foreach($this->tasks as $index => $arrayTask) {
+            if($task === $arrayTask) {
+                array_splice($this->tasks, $index, 1);
+                return true;
+            }
+        }
+        return false;
     }
 }
