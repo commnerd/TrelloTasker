@@ -27,16 +27,14 @@ class CardList extends Group
 
     public function __construct(
         string $title = '',
-        string $description = '',
         array $cards = [],
         array $tags = [],
-        DateTime $created_at = new DateTime("now"),
-        DateTime $updated_at = new DateTime("now"),
-        DateTime $deleted_at = null,
+        DateTime $created_at = null,
+        DateTime $updated_at = null,
+        DateTime $deleted_at = null
     )
     {
         $this->setTitle($title);
-        $this->setDescription($description);
         foreach($cards as $card) {
             $this->cards[] = $card;
         }
@@ -46,9 +44,12 @@ class CardList extends Group
                 $this
             ));
         }
-        $this->setCreatedAt($created_at);
-        $this->setUpdatedAt($updated_at);
-        $this->setDeletedAt($deleted_at);
+        $this->setCreatedAt($created_at ?? new DateTime("now"));
+        $this->setUpdatedAt($updated_at ?? new DateTime("now"));
+
+        if(!is_null($deleted_at)) {
+            $this->setDeletedAt($deleted_at);
+        }
     }
 
     /**

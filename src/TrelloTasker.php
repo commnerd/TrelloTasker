@@ -4,11 +4,15 @@
  */
 namespace TrelloTasker;
 
-use GuzzleHttp\Client;
-
 use TrelloTasker\Api\BoardsEndpoint;
+use TrelloTasker\Api\BoardEndpoint;
+use TrelloTasker\Api\ListsEndpoint;
+use TrelloTasker\Api\ListEndpoint;
+
+use TrelloTasker\Models\CardList;
 use TrelloTasker\Models\Board;
 use TrelloTasker\Config;
+use GuzzleHttp\Client;
 use Tasker\Group;
 use Iterator;
 
@@ -19,6 +23,9 @@ class TrelloTasker implements Iterator
      */
     const ENDPOINTS = [
         BoardsEndpoint::class,
+        BoardEndpoint::class,
+        ListsEndpoint::class,
+        ListEndpoint::class,
     ];
 
     /**
@@ -111,7 +118,7 @@ class TrelloTasker implements Iterator
      *
      * @return array
      */
-    public function getBoards(): array
+    public function boards(): array
     {
         $endpoint = $this->config->get(BoardsEndpoint::class);
         $boards = [];
@@ -130,6 +137,74 @@ class TrelloTasker implements Iterator
         }
 
         return $boards;
+    }
+
+    /**
+     * Get Trello board by id
+     *
+     * @param string $id
+     * @return Board
+     */
+    public function board(string $id): Board
+    {
+        $endpoint = $this->config->get(BoardEndpoint::class);
+
+        $path = str_replace("{id}", $id, $endpoint::PATH);
+        $response = $this->client->get($path);
+
+        $structure = json_decode($response->getBody());
+
+        return new Board(
+            $structure->name,
+            $structure->desc ?? '',
+            [],
+            (array)$structure->labelNames ?? [],
+        );
+    }
+
+    /**
+     * Get list of a board's lists
+     *
+     * @param string $boardId
+     * @return array
+     */
+    public function lists(string $boardId): array
+    {
+        $endpoint = $this->config->get(ListsEndpoint::class);
+        $lists = [];
+        $path = str_replace("{id}", $boardId, $endpoint::PATH);
+
+        $response = $this->client->get($path);
+
+        $structure = json_decode($response->getBody());
+
+        foreach($structure as $listing) {
+            $lists[] = new CardList(
+                $listing->name,
+            );
+        }
+
+        return $lists;
+    }
+
+    /**
+     * Get list definition
+     *
+     * @param string $listId
+     * @return CardList
+     */
+    public function list(string $listId): CardList
+    {
+        $endpoint = $this->config->get(ListEndpoint::class);
+        $path = str_replace("{id}", $listId, $endpoint::PATH);
+
+        $response = $this->client->get($path);
+
+        $structure = json_decode($response->getBody());
+
+        return new CardList(
+            $structure->name,
+        );
     }
 
     /**

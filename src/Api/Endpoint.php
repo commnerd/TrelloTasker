@@ -26,7 +26,12 @@ abstract class Endpoint
         }
     }
 
-    public function getPath(): string {
-        return $this->path;
+    public function __call(string $method, array $args)
+    {
+        foreach(get_called_class()::VERBS as $verb) {
+            if($method === strtolower($verb)) {
+                call_user_func([$this, $method], $args);
+            }
+        }
     }
 }

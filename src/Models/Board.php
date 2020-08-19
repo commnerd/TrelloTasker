@@ -45,7 +45,7 @@ class Board extends Group
         }
         foreach($tags as $color => $name) {
             $this->addTag(new Tag(
-                $name ?? $color,
+                empty($name) ? $color : $name,
                 $this
             ));
         }
