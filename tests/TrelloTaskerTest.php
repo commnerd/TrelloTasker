@@ -6,19 +6,14 @@ namespace Tests;
 
 use TrelloTasker\Models\CardList;
 use TrelloTasker\Models\Board;
-use TrelloTasker\TrelloTasker;
+use TrelloTasker\Models\Card;
 use TrelloTasker\Models\Tag;
-use TrelloTasker\Config;
 
-use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\Psr7\Response;
-use GuzzleHttp\HandlerStack;
-use GuzzleHttp\Client;
+
 
 class TrelloTaskerTest extends TestCase
 {
-    private TrelloTasker $tasker;
-
     public function testBoards()
     {
         $this->setupMocks([
@@ -60,7 +55,7 @@ class TrelloTaskerTest extends TestCase
     public function testLists()
     {
         $this->setupMocks([
-            new Response(200, [], file_get_contents(__DIR__."/Fixtures/Api/Responses/BoardsResponse.json"))
+            new Response(200, [], file_get_contents(__DIR__."/Fixtures/Api/Responses/ListsResponse.json"))
         ]);
 
         $lists = $this->tasker->lists("abc");
@@ -83,14 +78,29 @@ class TrelloTaskerTest extends TestCase
         $this->assertEquals(null, $list->getParentGroup());
     }
 
-    private function setupMocks(array $responseStack) {
-        // Create a mock and queue two responses.
-        $mock = new MockHandler($responseStack);
+    public function testCards()
+    {
+        $this->setupMocks([
+            new Response(200, [], file_get_contents(__DIR__."/Fixtures/Api/Responses/CardsResponse.json"))
+        ]);
 
-        $handlerStack = HandlerStack::create($mock);
-        $this->client = new Client(['handler' => $handlerStack]);
+        $cards = $this->tasker->cards("abc");
 
-        $this->config = new Config();
-        $this->tasker = new TrelloTasker($this->config, $this->client);
+        $this->assertTrue($cards[0] instanceof Card);
+    }
+
+    public function testCard()
+    {
+        $this->setupMocks([
+            new Response(200, [], file_get_contents(__DIR__."/Fixtures/Api/Responses/CardResponse.json"))
+        ]);
+
+        $card = $this->tasker->card('foo');
+
+        $this->assertTrue($card instanceof Card);
+        $this->assertEquals("Build Jasper's play house", $card->getTitle());
+
+        $this->assertEquals(null, $card->getDeletedAt());
+        $this->assertEquals(null, $card->getParentGroup());
     }
 }

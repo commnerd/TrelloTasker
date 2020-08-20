@@ -5,9 +5,16 @@
 namespace Tests;
 
 use PHPUnit\Framework\TestCase as PhpUnitTestCase;
+use GuzzleHttp\Handler\MockHandler;
+use TrelloTasker\TrelloTasker;
+use GuzzleHttp\HandlerStack;
+use TrelloTasker\Config;
+use GuzzleHttp\Client;
 
 class TestCase extends PhpUnitTestCase
 {
+    protected TrelloTasker $tasker;
+
     /**
     * Call protected/private method of a class.
     *
@@ -24,5 +31,16 @@ class TestCase extends PhpUnitTestCase
         $method->setAccessible(true);
 
         return $method->invokeArgs($object, $parameters);
+    }
+
+    protected function setupMocks(array $responseStack) {
+        // Create a mock and queue two responses.
+        $mock = new MockHandler($responseStack);
+
+        $handlerStack = HandlerStack::create($mock);
+        $this->client = new Client(['handler' => $handlerStack]);
+
+        $this->config = new Config();
+        $this->tasker = new TrelloTasker($this->config, $this->client);
     }
 }

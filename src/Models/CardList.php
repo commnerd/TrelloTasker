@@ -4,12 +4,16 @@
  */
 namespace TrelloTasker\Models;
 
+use TrelloTasker\Traits\Taskered;
+use TrelloTasker\Models\Card;
+
 use Tasker\Traits\Tombstoned;
 use Tasker\Traits\Described;
 use Tasker\Traits\Grouped;
 use Tasker\Traits\Titled;
 use Tasker\Traits\Tagged;
 use Tasker\Traits\Dated;
+use Tasker\Traits\IDed;
 
 use Tasker\Group;
 use Tasker\Task;
@@ -20,13 +24,14 @@ use DateTime;
  */
 class CardList extends Group
 {
-    use Titled, Described, Tagged, Dated, Tombstoned, Grouped;
+    use Taskered, IDed, Titled, Described, Tagged, Dated, Tombstoned, Grouped;
 
     private array $cards = [];
     private int $cardIndex = -1;
 
     public function __construct(
-        string $title = '',
+        string $id,
+        string $title,
         array $cards = [],
         array $tags = [],
         DateTime $created_at = null,
@@ -34,6 +39,7 @@ class CardList extends Group
         DateTime $deleted_at = null
     )
     {
+        $this->setId($id);
         $this->setTitle($title);
         foreach($cards as $card) {
             $this->cards[] = $card;
@@ -134,5 +140,25 @@ class CardList extends Group
             }
         }
         return false;
+    }
+
+    /**
+     * Provide array of cards that belong to this board
+     *
+     * @return array
+     */
+    public function cards() : array
+    {
+        return $this->tasker->cards($this->id);
+    }
+
+    /**
+     * Provide card that belongs to this board
+     *
+     * @return array
+     */
+    public function card(string $id) : Card
+    {
+        return $this->tasker->card($id);
     }
 }

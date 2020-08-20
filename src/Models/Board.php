@@ -10,8 +10,10 @@ use Tasker\Traits\Grouped;
 use Tasker\Traits\Titled;
 use Tasker\Traits\Tagged;
 use Tasker\Traits\Dated;
+use Tasker\Traits\IDed;
 
 use TrelloTasker\Exceptions\NotATaskGroupException;
+use TrelloTasker\Traits\Taskered;
 use Tasker\Group;
 use Tasker\Task;
 use DateTime;
@@ -23,12 +25,13 @@ class Board extends Group
 {
     const NO_TASK_MESSAGE = "Boards do not directly contain tasks.";
 
-    use Titled, Described, Tagged, Dated, Tombstoned, Grouped;
+    use Taskered, IDed, Titled, Described, Tagged, Dated, Tombstoned, Grouped;
 
     private array $cardLists = [];
     private int $cardListIndex = -1;
 
     public function __construct(
+        string $id,
         string $title,
         string $description = '',
         array $cardLists = [],
@@ -38,6 +41,7 @@ class Board extends Group
         DateTime $deleted_at = null
     )
     {
+        $this->setId($id);
         $this->setTitle($title);
         $this->setDescription($description);
         foreach($cardLists as $cardList) {
@@ -128,7 +132,7 @@ class Board extends Group
     }
 
     /**
-     * Rmove a task
+     * Remove a task
      *
      * @param Task $task
      * @return bool True if task was successfully removed, else false
@@ -136,5 +140,25 @@ class Board extends Group
     public function removeTask(Task $task): bool
     {
         throw new NotATaskGroupException(self::NO_TASK_MESSAGE);
+    }
+
+    /**
+     * Provide array of card lists that belong to this board
+     *
+     * @return array
+     */
+    public function lists() : array
+    {
+        return $this->tasker->lists($this->id);
+    }
+
+    /**
+     * Provide card list that belongs to this board
+     *
+     * @return array
+     */
+    public function list(string $id) : CardList
+    {
+        return $this->tasker->list($id);
     }
 }

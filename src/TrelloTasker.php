@@ -7,16 +7,19 @@ namespace TrelloTasker;
 use TrelloTasker\Api\BoardsEndpoint;
 use TrelloTasker\Api\BoardEndpoint;
 use TrelloTasker\Api\ListsEndpoint;
+use TrelloTasker\Api\CardsEndpoint;
 use TrelloTasker\Api\ListEndpoint;
+use TrelloTasker\Api\CardEndpoint;
 
 use TrelloTasker\Models\CardList;
 use TrelloTasker\Models\Board;
+use TrelloTasker\Models\Card;
 use TrelloTasker\Config;
 use GuzzleHttp\Client;
 use Tasker\Group;
-use Iterator;
+use DateTime;
 
-class TrelloTasker implements Iterator
+class TrelloTasker
 {
     /**
      * Endpoints to be used in this client
@@ -25,7 +28,9 @@ class TrelloTasker implements Iterator
         BoardsEndpoint::class,
         BoardEndpoint::class,
         ListsEndpoint::class,
+        CardsEndpoint::class,
         ListEndpoint::class,
+        CardEndpoint::class,
     ];
 
     /**
@@ -40,18 +45,6 @@ class TrelloTasker implements Iterator
      */
     private Client $client;
 
-    /**
-     * Grouping of boards
-     *
-     * @var $boards
-     */
-    private array $boards = [];
-
-    /**
-     * Iterator index for Iterator implementation
-     */
-    private int $iteratorIndex = 0;
-
     public function __construct(
         Config $config,
         Client $client = null
@@ -63,54 +56,6 @@ class TrelloTasker implements Iterator
         }
         $this->client = $client;
         $this->initializeEndpoints();
-    }
-
-    /**
-     * Get current task to support Iterator interface
-     *
-     * @return Group
-     */
-    public function current(): Group {
-        $this->groups[$this->iteratorIndex];
-    }
-
-    /**
-     * Get current key to support Iterator interface
-     *
-     * @return int
-     */
-    public function key(): int {
-        return $this->iteratorIndex;
-    }
-
-    /**
-     * Increment task index to support Iterator interface
-     *
-     * @return void
-     */
-    public function next(): void
-    {
-        $this->iteratorIndex++;
-    }
-
-    /**
-     * Decrement task index to support Iterator interface
-     *
-     * @return void
-     */
-    public function rewind(): void
-    {
-        $this->iteratorIndex--;
-    }
-
-    /**
-     * Return true if current task is valid, else false to support Iterator interface
-     *
-     * @return boolean
-     */
-    public function valid(): bool
-    {
-        return !!$this->boards[$this->iteratorIndex];
     }
 
     /**
@@ -128,12 +73,16 @@ class TrelloTasker implements Iterator
         $structure = json_decode($response->getBody());
 
         foreach($structure as $listing) {
-            $boards[] = new Board(
+            $board = new Board(
+                $listing->id,
                 $listing->name,
                 $listing->desc,
                 [],
                 (array)$listing->labelNames,
             );
+
+            $board->setTrelloTasker($this);
+            $boards[] = $board;
         }
 
         return $boards;
@@ -154,12 +103,17 @@ class TrelloTasker implements Iterator
 
         $structure = json_decode($response->getBody());
 
-        return new Board(
+        $board = new Board(
+            $structure->id,
             $structure->name,
             $structure->desc ?? '',
             [],
             (array)$structure->labelNames ?? [],
         );
+
+        $board->setTrelloTasker($this);
+
+        return $board;
     }
 
     /**
@@ -179,9 +133,12 @@ class TrelloTasker implements Iterator
         $structure = json_decode($response->getBody());
 
         foreach($structure as $listing) {
-            $lists[] = new CardList(
+            $list = new CardList(
+                $listing->id,
                 $listing->name,
             );
+            $list->setTrelloTasker($this);
+            $lists[] = $list;
         }
 
         return $lists;
@@ -202,8 +159,61 @@ class TrelloTasker implements Iterator
 
         $structure = json_decode($response->getBody());
 
-        return new CardList(
+        $list = new CardList(
+            $structure->id,
             $structure->name,
+        );
+        $list->setTrelloTasker($this);
+        return $list;
+    }
+
+    /**
+     * Get list of a list's cards
+     *
+     * @param string $listId
+     * @return array
+     */
+    public function cards(string $listId): array
+    {
+        $endpoint = $this->config->get(CardsEndpoint::class);
+        $cards = [];
+        $path = str_replace("{id}", $listId, $endpoint::PATH);
+
+        $response = $this->client->get($path);
+
+        $structure = json_decode($response->getBody());
+
+        foreach($structure as $listing) {
+            $cards[] = new Card(
+                $listing->id,
+                $listing->name,
+            );
+        }
+
+        return $cards;
+    }
+
+    /**
+     * Get card definition
+     *
+     * @param string $cardId
+     * @return Card
+     */
+    public function card(string $cardId): Card
+    {
+        $endpoint = $this->config->get(CardEndpoint::class);
+        $path = str_replace("{id}", $cardId, $endpoint::PATH);
+
+        $response = $this->client->get($path);
+
+        $structure = json_decode($response->getBody());
+
+        return new Card(
+            $structure->id,
+            $structure->name,
+            $structure->desc,
+            new DateTime($structure->dateLastActivity),
+            new DateTime($structure->dateLastActivity)
         );
     }
 

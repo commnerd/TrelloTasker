@@ -10,33 +10,33 @@ use Tasker\Traits\Grouped;
 use Tasker\Traits\Titled;
 use Tasker\Traits\Tagged;
 use Tasker\Traits\Dated;
+use Tasker\Traits\IDed;
 
 use Tasker\Task;
 use DateTime;
 
 class Card extends Task
 {
-    use Titled, Described, Tagged, Dated, Tombstoned, Grouped;
+    use IDed, Titled, Described, Tagged, Dated, Tombstoned, Grouped;
 
-    public function __constructor(
+    public function __construct(
+        string $id,
         string $title,
-        string $description = [],
-        array $tags = [],
-        DateTime $created_at = new DateTime("now"),
-        DateTime $updated_at = new DateTime("now"),
+        string $description = "",
+        DateTime $created_at = null,
+        DateTime $updated_at = null,
         DateTime $deleted_at = null
     )
     {
+        $this->setId($id);
         $this->setTitle($title);
         $this->setDescription($description);
-        foreach($tags as $color => $name) {
-            $this->addTag(new Tag(
-                $name ?? $color,
-                $this
-            ));
+
+        $this->setCreatedAt($created_at ?? new DateTime("now"));
+        $this->setUpdatedAt($updated_at ?? new DateTime("now"));
+
+        if(!is_null($deleted_at)) {
+            $this->setDeletedAt($deleted_at);
         }
-        $this->setCreatedAt($created_at);
-        $this->setUpdatedAt($updated_at);
-        $this->setDeletedAt($deleted_at);
     }
 }
